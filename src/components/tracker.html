@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Aria — Project Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #080b14;
+  --bg2: #0d1220;
+  --bg3: #111827;
+  --violet: #6366f1;
+  --violet2: #818cf8;
+  --cyan: #22d3ee;
+  --green: #4ade80;
+  --amber: #fbbf24;
+  --red: #f87171;
+  --muted: rgba(148,163,184,0.6);
+  --border: rgba(99,102,241,0.15);
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+/* background grid */
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(99,102,241,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+
+.wrap{max-width:1100px;margin:0 auto;padding:40px 24px;position:relative;z-index:1;}
+
+/* HEADER */
+.header{text-align:center;margin-bottom:56px;}
+.header-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(99,102,241,0.1);border:1px solid var(--border);border-radius:50px;padding:6px 16px;font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--violet2);margin-bottom:20px;letter-spacing:0.05em;}
+.header-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.header h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,3.2rem);font-weight:800;background:linear-gradient(135deg,#e2e8f0 0%,var(--violet2) 50%,var(--cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.1;margin-bottom:12px;}
+.header p{color:var(--text2);font-size:0.9rem;max-width:500px;margin:0 auto;}
+
+/* STATS ROW */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:40px;}
+.stat{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:18px 20px;text-align:center;}
+.stat-val{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:700;color:var(--violet2);}
+.stat-label{font-size:0.72rem;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.08em;}
+
+/* PROGRESS BAR */
+.progress-section{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px 24px;margin-bottom:40px;}
+.progress-label{display:flex;justify-content:space-between;font-size:0.8rem;color:var(--text2);margin-bottom:10px;}
+.progress-track{height:8px;background:rgba(99,102,241,0.1);border-radius:50px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:50px;background:linear-gradient(90deg,var(--violet),var(--cyan));width:72%;transition:width 1s ease;}
+.progress-steps{display:flex;justify-content:space-between;margin-top:10px;}
+.progress-step{font-size:0.68rem;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+.progress-step.done{color:var(--green);}
+.progress-step.active{color:var(--cyan);}
+
+/* PHASE CARDS */
+.phases{display:flex;flex-direction:column;gap:16px;}
+.phase{background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:border-color .2s;}
+.phase:hover{border-color:rgba(99,102,241,0.35);}
+.phase-header{display:flex;align-items:center;gap:14px;padding:18px 22px;cursor:pointer;user-select:none;}
+.phase-num{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--violet2);width:32px;flex-shrink:0;}
+.phase-title{font-family:'Syne',sans-serif;font-size:1rem;font-weight:600;color:var(--text);flex:1;}
+.phase-meta{display:flex;align-items:center;gap:8px;}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:50px;font-size:0.68rem;font-weight:500;font-family:'JetBrains Mono',monospace;letter-spacing:0.03em;}
+.badge.done{background:rgba(74,222,128,0.1);color:var(--green);border:1px solid rgba(74,222,128,0.2);}
+.badge.done::before{content:'✓ ';}
+.badge.active{background:rgba(34,211,238,0.1);color:var(--cyan);border:1px solid rgba(34,211,238,0.2);}
+.badge.active::before{content:'◉ ';}
+.badge.queued{background:rgba(148,163,184,0.08);color:var(--muted);border:1px solid rgba(148,163,184,0.15);}
+.badge.queued::before{content:'○ ';}
+.chevron{color:var(--muted);transition:transform .3s;font-size:0.8rem;margin-left:4px;}
+.phase.open .chevron{transform:rotate(180deg);}
+
+.phase-body{display:none;padding:0 22px 22px;border-top:1px solid var(--border);}
+.phase.open .phase-body{display:block;}
+
+/* sections inside phase body */
+.section{margin-top:18px;}
+.section-title{font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--violet2);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* key-value grid */
+.kv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;}
+.kv{background:var(--bg3);border:1px solid rgba(99,102,241,0.1);border-radius:10px;padding:10px 14px;}
+.kv-key{font-size:0.68rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:3px;}
+.kv-val{font-size:0.85rem;color:var(--text);font-weight:500;}
+
+/* chips */
+.chips{display:flex;flex-wrap:wrap;gap:6px;}
+.chip{padding:4px 12px;border-radius:50px;font-size:0.72rem;font-family:'JetBrains Mono',monospace;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.18);color:var(--violet2);}
+.chip.file{background:rgba(34,211,238,0.06);border-color:rgba(34,211,238,0.15);color:var(--cyan);}
+.chip.fix{background:rgba(251,191,36,0.07);border-color:rgba(251,191,36,0.2);color:var(--amber);}
+.chip.feature{background:rgba(74,222,128,0.07);border-color:rgba(74,222,128,0.18);color:var(--green);}
+
+/* sessions (Phase 5 subsections) */
+.sessions{display:flex;flex-direction:column;gap:10px;margin-top:10px;}
+.session{background:var(--bg3);border:1px solid rgba(99,102,241,0.1);border-radius:12px;overflow:hidden;}
+.session-header{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;}
+.session-letter{font-family:'Syne',sans-serif;font-weight:700;font-size:0.9rem;color:var(--violet2);width:24px;}
+.session-name{font-size:0.85rem;font-weight:500;color:var(--text);flex:1;}
+.session-body{display:none;padding:0 16px 14px;border-top:1px solid rgba(99,102,241,0.08);}
+.session.open .session-body{display:block;}
+.session.open .chevron{transform:rotate(180deg);}
+
+/* issue log */
+.issue-log{display:flex;flex-direction:column;gap:6px;}
+.issue{background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.15);border-radius:8px;padding:8px 12px;font-size:0.78rem;color:var(--text2);line-height:1.5;}
+.issue strong{color:var(--amber);}
+.issue.fix{background:rgba(74,222,128,0.05);border-color:rgba(74,222,128,0.15);}
+.issue.fix strong{color:var(--green);}
+
+/* upcoming */
+.upcoming{display:flex;flex-direction:column;gap:6px;}
+.upcoming-item{display:flex;align-items:center;gap:10px;font-size:0.82rem;color:var(--text2);padding:6px 0;}
+.upcoming-item::before{content:'→';color:var(--violet2);font-family:'JetBrains Mono',monospace;flex-shrink:0;}
+
+/* responsive */
+@media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr);}.kv-grid{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-badge"><span class="dot"></span>PROJECT TRACKER v5.3 — SESSION C COMPLETE</div>
+    <h1>Aria — Mental Health AI</h1>
+    <p>Emotion detection + conversational support. Full-stack AI application in active development.</p>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat"><div class="stat-val">5</div><div class="stat-label">Total Phases</div></div>
+    <div class="stat"><div class="stat-val">8</div><div class="stat-label">Sessions Done</div></div>
+    <div class="stat"><div class="stat-val">63.9%</div><div class="stat-label">BiLSTM Accuracy</div></div>
+    <div class="stat"><div class="stat-val">7</div><div class="stat-label">Emotion Classes</div></div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="progress-section">
+    <div class="progress-label"><span>Overall Progress</span><span style="color:var(--cyan)">72% Complete</span></div>
+    <div class="progress-track"><div class="progress-fill"></div></div>
+    <div class="progress-steps">
+      <span class="progress-step done">P1 Data</span>
+      <span class="progress-step done">P2 Models</span>
+      <span class="progress-step done">P3 Training</span>
+      <span class="progress-step done">P4 RAG+API</span>
+      <span class="progress-step active">P5 Full-Stack</span>
+      <span class="progress-step queued">Deploy</span>
+    </div>
+  </div>
+
+  <!-- PHASES -->
+  <div class="phases">
+
+    <!-- PHASE 1 -->
+    <div class="phase" id="p1">
+      <div class="phase-header" onclick="toggle('p1')">
+        <div class="phase-num">01</div>
+        <div class="phase-title">Data Collection & Preprocessing</div>
+        <div class="phase-meta"><span class="badge done">Complete</span><span class="chevron">▼</span></div>
+      </div>
+      <div class="phase-body">
+        <div class="section">
+          <div class="section-title">Deliverables</div>
+          <div class="chips">
+            <span class="chip file">cleaned_dataset.csv</span>
+            <span class="chip file">label_encoder.pkl</span>
+            <span class="chip file">posts.json</span>
+            <span class="chip file">quotes.json</span>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">Dataset Details</div>
+          <div class="kv-grid">
+            <div class="kv"><div class="kv-key">Source</div><div class="kv-val">Reddit mental health posts</div></div>
+            <div class="kv"><div class="kv-key">Classes</div><div class="kv-val">7 emotions</div></div>
+            <div class="kv"><div class="kv-key">Labels</div><div class="kv-val">anger, disgust, fear, joy, neutral, sadness, surprise</div></div>
+            <div class="kv"><div class="kv-key">Split</div><div class="kv-val">80% train / 20% val</div></div>
+            <div class="kv"><div class="kv-key">Class Counts</div><div class="kv-val">[1292,1020,2559,901,1504,2143,1004]</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHASE 2 -->
+    <div class="phase" id="p2">
+      <div class="phase-header" onclick="toggle('p2')">
+        <div class="phase-num">02</div>
+        <div class="phase-title">Model Architecture Design</div>
+        <div class="phase-meta"><span class="badge done">Complete</span><span class="chevron">▼</span></div>
+      </div>
+      <div class="phase-body">
+        <div class="section">
+          <div class="section-title">Models Designed</div>
+          <div class="kv-grid">
+            <div class="kv"><div class="kv-key">Model 1</div><div class="kv-val">BiLSTM + GloVe</div></div>
+            <div class="kv"><div class="kv-key">Model 2</div><div class="kv-val">RoBERTa (twitter-roberta-base-emotion)</div></div>
+            <div class="kv"><div class="kv-key">Task</div><div class="kv-val">7-class emotion classification</div></div>
+            <div class="kv"><div class="kv-key">Framework</div><div class="kv-val">PyTorch + HuggingFace</div></div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">BiLSTM Architecture</div>
+          <div class="kv-grid">
+            <div class="kv"><div class="kv-key">Embedding</div><div class="kv-val">GloVe 6B, dim=100</div></div>
+            <div class="kv"><div class="kv-key">Hidden Size</div><div class="kv-val">128</div></div>
+            <div class="kv"><div class="kv-key">Layers</div><div class="kv-val">1, Bidirectional</div></div>
+            <div class="kv"><div class="kv-key">Dropout</div><div class="kv-val">0.3</div></div>
+            <div class="kv"><div class="kv-key">Max Seq Len</div><div class="kv-val">100</div></div>
+            <div class="kv"><div class="kv-key">Vocab min_freq</div><div class="kv-val">2</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHASE 3 -->
+    <div class="phase" id="p3">
+      <div class="phase-header" onclick="toggle('p3')">
+        <div class="phase-num">03</div>
+        <div class="phase-title">Model Training & Evaluation</div>
+        <div class="phase-meta"><span class="badge done">Complete</span><span class="chevron">▼</span></div>
+      </div>
+      <div class="phase-body">
+        <div class="section">
+          <div class="section-title">Training Results</div>
+          <div class="kv-grid">
+            <div class="kv"><div class="kv-key">BiLSTM Best Acc</div><div class="kv-val" style="color:var(--green)">63.93% (epoch 6)</div></div>
+            <div class="kv"><div class="kv-key">Early Stopping</div><div class="kv-val">patience=5</div></div>
+            <div class="kv"><div class="kv-key">GPU</div><div class="kv-val">GTX 1650, CUDA 12.6</div></div>
+            <div class="kv"><div class="kv-key">RoBERTa</div><div class="kv-val">Fine-tuned, higher accuracy</div></div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">Saved Files</div>
+          <div class="chips">
+            <span class="chip file">bilstm_best.pt</span>
+            <span class="chip file">roberta_best.safetensors</span>
+            <span class="chip file">label_encoder.pkl</span>
+            <span class="chip fix">CVE-2025-32434 fixed → .pt converted to .safetensors</span>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">Key Learnings</div>
+          <div class="chips">
+            <span class="chip fix">pipeline() broken → use AutoTokenizer+AutoModelForSequenceClassification</span>
+            <span class="chip fix">AutoConfig + ignore_mismatched_sizes needed for RoBERTa load</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHASE 4 -->
+    <div class="phase" id="p4">
+      <div class="phase-header" onclick="toggle('p4')">
+        <div class="phase-num">04</div>
+        <div class="phase-title">RAG Pipeline + Gemini API</div>
+        <div class="phase-meta"><span class="badge done">Complete</span><span class="chevron">▼</span></div>
+      </div>
+      <div class="phase-body">
+        <div class="section">
+          <div class="section-title">Files</div>
+          <div class="chips">
+            <span class="chip file">chat_api.py</span>
+            <span class="chip file">retriever.py</span>
+            <span class="chip file">gemini_chat.py</span>
+            <span class="chip file">build_index.py</span>
+            <span class="chip file">faiss_index.bin</span>
+            <span class="chip file">embeddings.npy</span>
+            <span class="chip file">.env</span>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">Architecture</div>
+          <div class="kv-grid">
+            <div class="kv"><div class="kv-key">Vector Store</div><div class="kv-val">FAISS</div></div>
+            <div class="kv"><div class="kv-key">LLM</div><div class="kv-val">Gemini API</div></div>
+            <div class="kv"><div class="kv-key">Retrieval</div><div class="kv-val">Top-k similar posts</div></div>
+            <div class="kv"><div class="kv-key">Quotes</div><div class="kv-val">Emotion-mapped quotes.json</div></div>
+            <div class="kv"><div class="kv-key">API Framework</div><div class="kv-val">FastAPI + Uvicorn</div></div>
+            <div class="kv"><div class="kv-key">CORS</div><div class="kv-val">localhost:5500, 3000</div></div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">Key Fix</div>
+          <div class="chips">
+            <span class="chip fix">retriever.py uses __file__ path resolution (not os.getcwd())</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHASE 5 -->
+    <div class="phase open" id="p5">
+      <div class="phase-header" onclick="toggle('p5')">
+        <div class="phase-num">05</div>
+        <div class="phase-title">Full-Stack Application (Aria)</div>
+        <div class="phase-meta"><span class="badge active">In Progress</span><span class="chevron">▼</span></div>
+      </div>
+      <div class="phase-body">
+
+        <div class="section">
+          <div class="section-title">All Phase 5 Files</div>
+          <div class="chips">
+            <span class="chip file">chat_api.py</span>
+            <span class="chip file">database.py</span>
+            <span class="chip file">auth.py</span>
+            <span class="chip file">aria.db</span>
+            <span class="chip file">index.html</span>
+            <span class="chip file">login.html</span>
+            <span class="chip file">chat.html</span>
+            <span class="chip file">.vscode/settings.json</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Sessions</div>
+          <div class="sessions">
+
+            <!-- SESSION A -->
+            <div class="session open" id="sA">
+              <div class="session-header" onclick="toggleSession('sA')">
+                <div class="session-letter">A</div>
+                <div class="session-name">Frontend Design</div>
+                <span class="badge done" style="font-size:0.65rem">Complete</span>
+                <span class="chevron" style="color:var(--muted);margin-left:8px;font-size:0.75rem">▼</span>
+              </div>
+              <div class="session-body">
+                <div class="section">
+                  <div class="section-title">Deliverables</div>
+                  <div class="chips">
+                    <span class="chip feature">index.html — landing page</span>
+                    <span class="chip feature">login.html — auth UI with SVG dark sky</span>
+                    <span class="chip feature">chat.html — full chat interface with sidebar</span>
+                    <span class="chip feature">Dark indigo theme with CSS variables</span>
+                    <span class="chip feature">Animated stars + clouds (SVG)</span>
+                    <span class="chip feature">Emotion badge display</span>
+                    <span class="chip feature">Typing indicator animation</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SESSION B -->
+            <div class="session open" id="sB">
+              <div class="session-header" onclick="toggleSession('sB')">
+                <div class="session-letter">B</div>
+                <div class="session-name">Backend Foundation + Database</div>
+                <span class="badge done" style="font-size:0.65rem">Complete</span>
+                <span class="chevron" style="color:var(--muted);margin-left:8px;font-size:0.75rem">▼</span>
+              </div>
+              <div class="session-body">
+                <div class="section">
+                  <div class="section-title">Database Schema</div>
+                  <div class="kv-grid">
+                    <div class="kv"><div class="kv-key">DB</div><div class="kv-val">SQLite (aria.db)</div></div>
+                    <div class="kv"><div class="kv-key">Table 1</div><div class="kv-val">users (id, username, email, password_hash, created_at)</div></div>
+                    <div class="kv"><div class="kv-key">Table 2</div><div class="kv-val">conversations (id, user_id, user_message, aria_reply, emotion, confidence, created_at)</div></div>
+                    <div class="kv"><div class="kv-key">GUEST_USER_ID</div><div class="kv-val">1 (placeholder, replaced by JWT in C)</div></div>
+                  </div>
+                </div>
+                <div class="section">
+                  <div class="section-title">New Routes</div>
+                  <div class="chips">
+                    <span class="chip feature">GET /history — fetch last 20 messages</span>
+                    <span class="chip fix">retriever.py __file__ path fix</span>
+                    <span class="chip fix">AutoConfig + ignore_mismatched_sizes applied</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SESSION C -->
+            <div class="session open" id="sC">
+              <div class="session-header" onclick="toggleSession('sC')">
+                <div class="session-letter">C</div>
+                <div class="session-name">JWT Authentication</div>
+                <span class="badge done" style="font-size:0.65rem">Complete</span>
+                <span class="chevron" style="color:var(--muted);margin-left:8px;font-size:0.75rem">▼</span>
+              </div>
+              <div class="session-body">
+                <div class="section">
+                  <div class="section-title">auth.py — Core Functions</div>
+                  <div class="kv-grid">
+                    <div class="kv"><div class="kv-key">hash_password()</div><div class="kv-val">bcrypt hashing via passlib</div></div>
+                    <div class="kv"><div class="kv-key">verify_password()</div><div class="kv-val">Compare plain vs hashed</div></div>
+                    <div class="kv"><div class="kv-key">create_token()</div><div class="kv-val">JWT with user_id + 24hr expiry</div></div>
+                    <div class="kv"><div class="kv-key">decode_token()</div><div class="kv-val">Validate + extract user_id</div></div>
+                    <div class="kv"><div class="kv-key">Algorithm</div><div class="kv-val">HS256</div></div>
+                    <div class="kv"><div class="kv-key">Token expiry</div><div class="kv-val">24 hours</div></div>
+                    <div class="kv"><div class="kv-key">Storage</div><div class="kv-val">localStorage (aria_token, aria_user)</div></div>
+                  </div>
+                </div>
+                <div class="section">
+                  <div class="section-title">New API Routes</div>
+                  <div class="chips">
+                    <span class="chip feature">POST /register → creates user, returns JWT</span>
+                    <span class="chip feature">POST /login → verifies password, returns JWT</span>
+                    <span class="chip feature">POST /chat → 🔒 JWT protected</span>
+                    <span class="chip feature">GET /history → 🔒 JWT protected</span>
+                  </div>
+                </div>
+                <div class="section">
+                  <div class="section-title">Frontend Changes</div>
+                  <div class="chips">
+                    <span class="chip feature">login.html — real /register + /login API calls</span>
+                    <span class="chip feature">chat.html — Authorization: Bearer token header</span>
+                    <span class="chip feature">Auth guard — redirect to login if no token</span>
+                    <span class="chip feature">logout() — clears localStorage + redirects</span>
+                    <span class="chip feature">Auto-redirect if already logged in</span>
+                  </div>
+                </div>
+                <div class="section">
+                  <div class="section-title">Bugs Fixed This Session</div>
+                  <div class="issue-log">
+                    <div class="issue"><strong>Bug:</strong> bcrypt AttributeError '__about__' → <strong>Fix:</strong> pip install bcrypt==4.0.1</div>
+                    <div class="issue"><strong>Bug:</strong> Page resetting after every message → <strong>Root cause:</strong> Live Server watching aria.db — every DB write triggered browser reload</div>
+                    <div class="issue fix"><strong>Fix:</strong> .vscode/settings.json — liveServer.settings.ignoreFiles excludes *.db, __pycache__, *.pyc</div>
+                    <div class="issue"><strong>Bug:</strong> Buttons without type="button" defaulting to type="submit" → page reload on click</div>
+                    <div class="issue fix"><strong>Fix:</strong> Added type="button" to ALL buttons in chat.html and login.html (8 total)</div>
+                    <div class="issue"><strong>Bug:</strong> str_replace accidentally cut catch blocks from login.html → SyntaxError</div>
+                    <div class="issue fix"><strong>Fix:</strong> Restored both try/catch blocks in handleLogin() and handleSignup()</div>
+                    <div class="issue"><strong>Bug:</strong> window.location.href caused redirect loop → replaced with window.location.replace()</div>
+                    <div class="issue"><strong>Bug:</strong> CORS blocking Authorization header → added allow_credentials=True + OPTIONS method</div>
+                  </div>
+                </div>
+                <div class="section">
+                  <div class="section-title">DB Users Created</div>
+                  <div class="kv-grid">
+                    <div class="kv"><div class="kv-key">id=1</div><div class="kv-val">guest (placeholder, Session B)</div></div>
+                    <div class="kv"><div class="kv-key">id=2</div><div class="kv-val">shashank (Swagger test)</div></div>
+                    <div class="kv"><div class="kv-key">id=3</div><div class="kv-val">testuser (frontend test)</div></div>
+                    <div class="kv"><div class="kv-key">id=4</div><div class="kv-val">aria_test (final working test)</div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SESSION D -->
+            <div class="session" id="sD">
+              <div class="session-header" onclick="toggleSession('sD')">
+                <div class="session-letter">D</div>
+                <div class="session-name">Password Reset + Email OTP</div>
+                <span class="badge queued" style="font-size:0.65rem">Queued</span>
+                <span class="chevron" style="color:var(--muted);margin-left:8px;font-size:0.75rem">▼</span>
+              </div>
+              <div class="session-body">
+                <div class="section">
+                  <div class="section-title">Planned Features</div>
+                  <div class="upcoming">
+                    <div class="upcoming-item">Email OTP verification on signup</div>
+                    <div class="upcoming-item">Forgot password → OTP → reset flow</div>
+                    <div class="upcoming-item">Email service (SendGrid or Gmail SMTP)</div>
+                    <div class="upcoming-item">OTP stored temporarily with expiry</div>
+                    <div class="upcoming-item">Verification page UI</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SESSION E -->
+            <div class="session" id="sE">
+              <div class="session-header" onclick="toggleSession('sE')">
+                <div class="session-letter">E</div>
+                <div class="session-name">Deployment</div>
+                <span class="badge queued" style="font-size:0.65rem">Queued</span>
+                <span class="chevron" style="color:var(--muted);margin-left:8px;font-size:0.75rem">▼</span>
+              </div>
+              <div class="session-body">
+                <div class="section">
+                  <div class="section-title">Planned Stack</div>
+                  <div class="upcoming">
+                    <div class="upcoming-item">Backend → Railway (FastAPI + Uvicorn)</div>
+                    <div class="upcoming-item">Frontend → Netlify (HTML/CSS/JS)</div>
+                    <div class="upcoming-item">Database → SQLite → migrate to PostgreSQL</div>
+                    <div class="upcoming-item">Environment variables → Railway secrets</div>
+                    <div class="upcoming-item">CORS update for production domain</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <div style="text-align:center;margin-top:48px;font-size:0.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;">
+    Last updated: Session C Complete · May 28, 2026
+  </div>
+
+</div>
+
+<script>
+function toggle(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+}
+function toggleSession(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+}
+// animate progress bar on load
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.querySelector('.progress-fill').style.width = '72%';
+  }, 300);
+});
+</script>
+</body>
+</html>
