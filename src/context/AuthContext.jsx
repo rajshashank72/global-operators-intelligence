@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
 import { auth, provider, db } from "../firebase";
 import { signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
 import { doc, setDoc, onSnapshot } from "firebase/firestore";
 import emailjs from '@emailjs/browser';
+import React, { createContext, useContext, useEffect, useState, useMemo } from "react";
 
 const AuthContext = createContext();
 
@@ -16,7 +16,9 @@ export function AuthProvider({ children }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const adminEmails = process.env.REACT_APP_ADMIN_EMAILS?.split(',') || [];
+  const adminEmails = useMemo(() => 
+  process.env.REACT_APP_ADMIN_EMAILS?.split(',') || [], 
+  []);
 
   async function googleSignIn() {
     await signInWithPopup(auth, provider);
@@ -105,7 +107,7 @@ export function AuthProvider({ children }) {
       unsubscribeAuth();
       if (unsubscribeSnapshot) unsubscribeSnapshot();
     };
-  }, []);
+  }, [adminEmails]);
 
   const value = {
     currentUser,

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid, Legend, Treemap } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid, Legend } from 'recharts';
 import { operators } from '../data/operators';
 
 const GOLD = '#FFBF00';
@@ -16,7 +16,7 @@ export default function Analytics() {
     const fleetBuckets = { '1-5': 0, '6-15': 0, '16-30': 0, '31-60': 0, '61-100': 0, '100+': 0, 'Unknown': 0 };
     operators.forEach(op => {
       const fs = parseInt(op.fleetSize);
-      if (isNaN(fs) || op.fleetSize.includes('+') && fs > 99) fleetBuckets['100+']++;
+      if (isNaN(fs) || (op.fleetSize.includes('+') && fs > 99)) fleetBuckets['100+']++;
       else if (isNaN(fs)) fleetBuckets['Unknown']++;
       else if (fs <= 5) fleetBuckets['1-5']++;
       else if (fs <= 15) fleetBuckets['6-15']++;
