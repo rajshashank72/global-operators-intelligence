@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, onSnapshot } from 'firebase/firestore';
-import { Users, UserCheck, UserX, Clock, Globe, TrendingUp } from 'lucide-react';
+import { Users, UserCheck,  Clock, Globe } from 'lucide-react';
 import { operators } from '../data/operators';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
@@ -24,7 +24,6 @@ export default function AdminStats() {
   const approved = users.filter(u => u.status === 'approved').length;
   const pending  = users.filter(u => u.status === 'pending').length;
   const denied   = users.filter(u => u.status === 'denied').length;
-  const admins   = users.filter(u => u.role === 'admin').length;
 
   // Operators by region
   const byRegion = {};

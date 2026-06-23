@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, CartesianGrid, Legend, LineChart, Line
+  PieChart, Pie, Cell, CartesianGrid, Legend
 } from 'recharts';
 import { operators } from '../data/operators';
 
@@ -34,7 +34,6 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function Analytics() {
-  const [activeRegion, setActiveRegion] = useState('All');
 
   const data = useMemo(() => {
     // Operators by country (top 15)

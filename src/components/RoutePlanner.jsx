@@ -294,6 +294,7 @@ export default function RoutePlanner() {
     'VIP Airliner':       ['VIP Airliner'],
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const matchingFleetAircraft = useMemo(() => {
     if (!aircraft) return [];
     const allowedCategories = RATE_TO_FLEET_MAP[aircraft.type] || [aircraft.type];

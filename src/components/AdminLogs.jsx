@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
-import { Activity, User, Clock, RefreshCw } from 'lucide-react';
+import { User } from 'lucide-react';
 
 const NAVY = '#1a1a2e';
 const GOLD = '#FFBF00';
